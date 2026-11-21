@@ -50,7 +50,7 @@ def _award(ses,r,stamp,interval):
         skills=[]
         for sid,level,points in before:
             points+=skill_gain
-            cap=min(combate.nivel_maximo(),new_level+(11 if sid in range(20,32) else 0))
+            cap=clases.ramas.tope_nivel(sid,new_level)
             while level<cap and points>=max(1,clases.exp_requerida_skill(level,sid)):
                 points-=max(1,clases.exp_requerida_skill(level,sid));level+=1
             if level>=cap:points=min(points,max(1,clases.exp_requerida_skill(level,sid)))

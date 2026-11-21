@@ -79,3 +79,18 @@ work/tw_update32_nov2026/
 
 # Estado local del parche del cliente (lo escribe server/parche_cliente.py).
 data/parche_cliente.json
+data/localization/
+
+# Herramientas, binarios y material extraido solo para el trabajo local.
+extracted_bgm/
+tools/downloads/
+tools/ghidra_12.2_PUBLIC/
+tools/jdk-25.0.5.1+2/
+tools/npm-11.16.0/
+tools/npm-11.16.0.tgz
+tools/npm-shim/
+tools/rea/
+
+# Restos locales de Windows.
+$null
+*.lnk

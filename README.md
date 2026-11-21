@@ -1,6 +1,10 @@
 # Angels Online — local server
 
-**\*English** · [Español](README.es.md)\*
+**\*English** · [Español](README.es.md) · [简体中文](README.zh-CN.md)\*
+
+Local fix (2026-11-20): ShadowBlade is branch **30**, Mantle is **32** in the English,
+Simplified and Traditional client tables. Legacy server mappings and related progression
+paths are corrected without swapping saved IDs; [evidence and tests (中文)](docs/SHADOWBLADE_BRANCH_FIX_2026-11-20.md).
 
 Reverse-engineered network protocol for **Angels Online** (IGG, shut down in
 February 2026, client 8.5.1.0) and a server that speaks it, built from the client files and

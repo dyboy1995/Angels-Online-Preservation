@@ -98,6 +98,8 @@ def _init_db():
         BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
         con = _get_conn()
         try:
+            cuentas_existentes = con.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='cuentas'").fetchone() is not None
             con.execute('''
             CREATE TABLE IF NOT EXISTS cuentas (
                 usuario TEXT PRIMARY KEY COLLATE NOCASE,
@@ -214,7 +216,7 @@ def _init_db():
             cur = con.cursor()
             cur.execute('SELECT COUNT(*) FROM cuentas')
             cant_cuentas = cur.fetchone()[0]
-            if cant_cuentas == 0:
+            if cant_cuentas == 0 and not cuentas_existentes:
                 _migrar_desde_json(con)
         finally:
             con.close()

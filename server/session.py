@@ -23,6 +23,8 @@ from framing import HDR, decode_header, build_frame, submessages, pack_submessag
 from handshake import build_hello, XorEvolving
 from codec import Msg
 import messages  # noqa: registra los esquemas
+import localizacion
+import compat_npc_cn
 
 log = logging.getLogger('session')
 
@@ -95,7 +97,8 @@ class Session:
         if not submsgs:
             return
         self._registrar_flags_magicos(submsgs)
-        self.salida.append(build_frame(pack_submessages(submsgs), self._next_seq()))
+        self.salida.append(build_frame(pack_submessages(compat_npc_cn.paquetes(
+            localizacion.paquetes(submsgs, self.rol), self.rol)), self._next_seq()))
         # SALA DE INSTANCIA COMPARTIDA: lo que le pasa a un bicho de la sala
         # se lo ven todos los del grupo que esten en ella (app._espejar).
         espejo = getattr(self, 'espejo', None)
@@ -111,7 +114,8 @@ class Session:
         submsgs = self._filtrar_carga_mapa(submsgs)
         if submsgs:
             self._registrar_flags_magicos(submsgs)
-            self.salida.append(build_frame(pack_submessages(submsgs), self._next_seq()))
+            self.salida.append(build_frame(pack_submessages(compat_npc_cn.paquetes(
+                localizacion.paquetes(submsgs, self.rol), self.rol)), self._next_seq()))
 
     def _registrar_flags_magicos(self,submsgs):
         """Keep authoritative0185 snapshots so one mechanic preserves other bits."""

@@ -30,6 +30,7 @@ ayuda lo confirma), asi que se pueden calcular, pero aca todavia no se hace.
 import pathlib
 import re
 import struct
+import ramas
 
 PAKS = pathlib.Path('G:/extracted_paks')
 MSG_HABILIDAD = 333        # "aprendiste una habilidad"
@@ -66,7 +67,8 @@ def _cargar():
 
 
 def nombre(skill_id: int) -> str:
-    return _cargar().get(skill_id, f'Skill{skill_id}')
+    import localizacion
+    return localizacion.nombre('skill', skill_id, _cargar().get(skill_id, f'Skill{skill_id}'))
 
 
 # Los tres hechizos que el servidor real manda al elegir clase, con id de
@@ -79,7 +81,7 @@ RAMA_POR_SKILL = {
     10: '斧錘技能',     # Axe         -> Basic Beating / Ferocious Song / Fighting Shield
     11: '槍術技能',     # Spear       -> Basic Attack / Bloody Song / Endless Energy
     17: '弓箭技能',     # Longbow     -> Basic Shot / Accurate Song / Dodge Step
-    32: '影刃技能',     # Mantle      -> Stab / Nimble / Poisoned Dagger
+    ramas.SHADOWBLADE: '影刃技能',
     1: '生命技能',      # Life        -> Shock Wave / Cure Spell / Silver Shield
     2: '死靈技能',      # Wraith      -> Poison Hit / Soul Entangle / Summon Skeleton
     3: '混亂技能',      # Chaos       -> Magic Bomb / Charming Blessing / Sage Blessing
@@ -89,21 +91,12 @@ RAMA_POR_SKILL = {
 # descargar una. Los numeros son los mismos que usa el servidor real: en la
 # captura, cambiar con 0x002F contenedor 10 manda "Chaos" con el 3 y
 # "Meditate" con el 6.
-NOMBRE_RAMA = {
-    1: 'Life', 2: 'Wraith', 3: 'Chaos', 4: 'Earth', 5: 'Curse',
-    6: 'Meditate', 7: 'Hit', 8: 'Staff Hit', 9: 'Sword', 10: 'Axe',
-    11: 'Spear', 12: 'Enhance', 13: 'Grapple', 14: 'Shield', 15: 'Reserve',
-    16: 'Finesse', 17: 'Longbow', 18: 'Snipe', 19: 'Eagle Eye',
-    20: 'Collect', 21: 'Fishing', 22: 'Dig', 23: 'Lumber',
-    24: 'Mechanism', 25: 'Drive', 26: 'Weapon', 27: 'Armor',
-    28: 'Sew', 29: 'Technics', 30: 'Alchemy', 31: 'Cooking',
-    32: 'Mantle', 33: 'Garment', 34: 'Vestment',
-    35: 'Avatar', 36: 'Assault',
-}
+NOMBRE_RAMA = ramas.NOMBRES
 
 
 def nombre_de_rama(sid: int) -> str:
-    return NOMBRE_RAMA.get(int(sid), 'Skill %d' % sid)
+    import localizacion
+    return localizacion.nombre('skill', sid, NOMBRE_RAMA.get(int(sid), 'Skill %d' % sid))
 
 
 _HECHIZOS = None
@@ -160,10 +153,11 @@ def aviso_doble(msg_id: int, s1: str, s2: str = '', tipo: int = 2) -> bytes:
     habilidad, y el cliente lo dibujaba como un numero flotante sobre el
     personaje: ese era el "9" verde que aparecia junto al dano.
     """
+    import localizacion
     nul = bytes([0])
     return (struct.pack('<HHB', 0x000D, msg_id, tipo)
-            + s1.encode('latin-1', 'replace') + nul
-            + s2.encode('latin-1', 'replace') + nul
+            + localizacion.texto(s1, legacy='latin-1') + nul
+            + localizacion.texto(s2, legacy='latin-1') + nul
             + nul)
 
 
@@ -373,7 +367,8 @@ def aviso(texto: str, tipo: int = 7, msg_id: int = MSG_TEXTO) -> bytes:
     dos primeros bytes del cuerpo (el id de mensaje, 333) se leian como
     si fueran el opcode y salia un 0x014D que no existe.
     """
-    n = texto.encode('ascii', 'replace')
+    import localizacion
+    n = localizacion.texto(texto)
     return (struct.pack('<H', 0x000D)
             + struct.pack('<HB', msg_id, tipo) + n + bytes(3))
 
@@ -393,7 +388,7 @@ def chat_broadcast(entity_id: int, nombre: str, texto: str) -> bytes:
 
 
 def chat_super_broadcast(entity_id: int, nombre: str, texto: str,
-                         portrait_selector: int = 0) -> bytes:
+                         portrait_selector: int = 0, *, sistema: bool = False) -> bytes:
     """Super Broadcast: banda grande con retrato, autor y mensaje.
 
     La rama 11 quita el primer byte y lo conserva como selector del retrato.
@@ -403,6 +398,10 @@ def chat_super_broadcast(entity_id: int, nombre: str, texto: str,
     autor = str(nombre or '').encode('latin-1', 'replace')[:16].ljust(17, b'\x00')
     selector = b'1' if int(portrait_selector or 0) else b'0'
     mensaje = selector + str(texto or '').encode('latin-1', 'replace')[:999] + b'\x00'
+    if sistema:
+        import localizacion
+        autor = localizacion.codificar(nombre or '', limite=16, legacy='latin-1').ljust(17, b'\x00')
+        mensaje = selector + localizacion.codificar(texto or '', limite=999, legacy='latin-1') + b'\x00'
     return struct.pack('<HIB17s', 0x0128, int(entity_id), 11, autor) + mensaje
 
 
@@ -483,7 +482,7 @@ def chat_whisper(emisor: str, receptor: str, texto: str, err_code: int = 0) -> b
 #     19820 FreshmanRound Shield  盾    <- Shield  (14)
 #     19850 FreshmanWalking Stick 杖    <- Staff Hit (8)
 #     19844 FreshmanCatapult      彈弓  <- Longbow (17)
-#     19856 FreshmanSharp Knife   影刃  <- Mantle  (32)
+#     19856 FreshmanSharp Knife   影刃  <- ShadowBlade (30)
 #     19814 FreshmanCask          機甲  <- Mechanism (24)
 #
 # El emparejamiento sale de los nombres, no de una captura. Lo unico medido es
@@ -495,7 +494,7 @@ def chat_whisper(emisor: str, receptor: str, texto: str, err_code: int = 0) -> b
 # en ranuras 3 y 4.
 ARMA_POR_SKILL = {
     8: 19850, 9: 10, 10: 19832, 11: 19838,
-    14: 19820, 17: 19844, 20: 63, 21: 22, 22: 21, 23: 20, 32: 19856,
+    14: 19820, 17: 19844, 20: 63, 21: 22, 22: 21, 23: 20, ramas.SHADOWBLADE: 19856,
 }
 # Con que mano se empuna. Las reglas salen de lo poco medido y de como
 # funcionan las clases en el juego:
@@ -508,7 +507,7 @@ ARMA_POR_SKILL = {
 #   - el resto, una sola arma en la derecha
 SKILL_ESCUDO = 14
 ESCUDO = 19820                     # FreshmanRound Shield
-DOS_ARMAS = {9, 10}                # Sword (9), Axe/Hammer (10 - Warrior): armas dobles. Shadowblade (32) lleva UNA, en la mano derecha
+DOS_ARMAS = {9, 10}
 # Las clases magicas (Priest, Summoner, Wizard, Magician) no tienen habilidad
 # de arma cuerpo a cuerpo, pero llevan baston. Si entre las seis hay alguna
 # habilidad de magia y ninguna de arma, se les da el baston.
@@ -571,8 +570,7 @@ def regalo(ids):
         salida.append((4, 458))    # Wooden Arrow
 
     # Clases de productor: reciben el Freshman Cask (19814), el ride robot basico (ranura montura 10)
-    CLASES_PROD = {10, 11, 12, 13, 14, 15, 19, 20}
-    if any(i in SKILLS_PRODUCCION for i in skill_ids) or class_id(skill_ids) in CLASES_PROD:
+    if any(i in SKILLS_PRODUCCION for i in skill_ids) or class_id(skill_ids) in ramas.CLASES_PRODUCCION:
         salida.append((10, 19814))
 
     return salida
@@ -614,7 +612,7 @@ def class_id(skills_input):
 # 0x654F90 del binario):
 #
 #   - una rama cualquiera con id > 11 baja una fila por cada una de estas
-#     que el personaje lleve: la 30 (Alchemy) si su id esta entre 12 y 29,
+#     que el personaje lleve: la 30 (ShadowBlade) si su id esta entre 12 y 29,
 #     y la 35 (Avatar) y la 36 (Assault) si su id esta entre 20 y 34;
 #   - las ramas 30, 35 y 36 no se quedan donde estan: se meten en la fila
 #     de la PRIMERA rama de su grupo y empujan al resto hacia abajo.
@@ -663,13 +661,13 @@ ACCION_POR_SKILL = {
     # Magia
     1: 'magia', 2: 'magia', 3: 'magia', 4: 'magia', 5: 'magia', 6: 'magia', 7: 'magia', 8: 'magia', 34: 'magia', 35: 'magia', 36: 'magia',
     # Armas melee
-    9: 'melee', 10: 'melee', 11: 'melee', 32: 'melee', 14: 'melee',
+    9: 'melee', 10: 'melee', 11: 'melee', 14: 'melee',
     # Distancia
     17: 'distancia',
     # Recoleccion
     20: 'recolectar', 21: 'recolectar', 22: 'recolectar', 23: 'recolectar',
     # Produccion
-    26: 'producir', 27: 'producir', 28: 'producir', 29: 'producir', 30: 'producir', 31: 'producir',
+    26: 'producir', 27: 'producir', 28: 'producir', 29: 'producir', 31: 'producir',
 }
 
 # Lo que sube SIEMPRE con cada actividad, ademas de la habilidad concreta.
@@ -686,10 +684,10 @@ ACCION_POR_SKILL = {
 # poner Garment y Mantle juntos no hace que suban las dos: sube la que lleve.
 PASIVAS_POR_ACCION = {
     'melee': [16, 13, 12, 15, 14, 35, 36, 33, 32],       # Finesse, Grapple, Enhance, Reserve, Shield, Avatar, Assault, Garment, Mantle
-    'distancia': [17, 18, 19, 32],                        # Bow, Snipe, Eagle Eye, Mantle
+    'distancia': [17, 18, 19, 32, 35, 36],
     'magia': [1, 2, 3, 4, 5, 6, 7, 8, 34, 35, 36],       # Life, Wraith, Chaos, Earth, Curse, Meditate, Hit, Staff Hit, Vestment, Avatar, Assault
     'recolectar': [20, 21, 22, 23, 24, 25, 32],           # Collect, Fish, Dig, Lumber, Mechanism, Drive, Mantle
-    'producir': [26, 27, 28, 29, 30, 31, 24, 25, 32],     # Weapon, Armor, Sew, Technics, Alchemy, Cook, Mechanism, Drive, Mantle
+    'producir': [26, 27, 28, 29, 31, 24, 25, 32],
 }
 
 # Que armas arrastran ademas otra habilidad al golpear.
@@ -714,7 +712,7 @@ SKILL_POR_CATEGORIA = {
     '斧': 10, '錘': 10,        # hacha (210) y martillo (178) -> Axe
     '槍': 11,                  # lanza (384) -> Spear
     '弓箭': 17, '彈弓': 17,    # arco (363) y tirachinas (21) -> Longbow
-    '影刃': 32,                # hoja de sombra (331) -> Mantle / ShadowBlade
+    '影刃': ramas.SHADOWBLADE,
     '盾': 14,                  # escudo (267) -> Shield
     '杖': 8,                   # baston (386) -> Staff Hit
     '鐵鍬': 22,                # pala -> Dig
@@ -806,7 +804,7 @@ def es_dos_manos(item_id) -> bool:
                 pass
     if not item_id:
         return False
-    if skill_de_item(item_id) == 32:      # 影刃: una mano, solo en la derecha
+    if skill_de_item(item_id) == ramas.SHADOWBLADE:
         return False
     return not _MANOS_ITEM.get(int(item_id), True)
 
@@ -859,6 +857,8 @@ def skills_que_suben(accion: str, skills_arma=()):
     salida = set(PASIVAS_POR_ACCION.get(accion, []))
     salida |= {sid for sid, a in ACCION_POR_SKILL.items() if a == accion}
     for sid in (skills_arma or ()):
+        if sid == ramas.SHADOWBLADE and accion not in ('melee', 'distancia', 'magia'):
+            continue
         salida.add(sid)
         salida.update(EXTRA_POR_ARMA.get(sid, []))
     return salida
@@ -872,7 +872,7 @@ def exp_requerida_skill(nivel: int, sid: int = 1) -> int:
     return _cb.exp_para_skill(nivel, sid)
 
 
-# Las tres que el cliente trata aparte: Alchemy, Avatar y Assault.
+# Las tres que el cliente trata aparte: ShadowBlade, Avatar y Assault.
 RAMAS_AL_FINAL = (30, 35, 36)
 
 
@@ -1099,7 +1099,7 @@ CAJAS_MAGO = [1952, 1953, 1955]
 CAJAS_ARQUERO = [1944, 1945, 1947]
 GROWTH_BOX = 20103
 SKILLS_ARQUERO = {17, 18, 19}          # arco y punteria
-SKILLS_PRODUCCION = set(range(20, 32))  # recoleccion y oficios
+SKILLS_PRODUCCION = ramas.PRODUCCION
 
 
 def cajas_de(ids):
@@ -1119,8 +1119,7 @@ def premio_final(ids):
     """
     salida = [(5, 28), (6, 30)]
     skill_ids = [s[0] if isinstance(s, (list, tuple)) else int(s) for s in (ids or [])]
-    CLASES_PROD = {10, 11, 12, 13, 14, 15, 19, 20}
-    if any(i in SKILLS_PRODUCCION for i in skill_ids) or class_id(skill_ids) in CLASES_PROD:
+    if any(i in SKILLS_PRODUCCION for i in skill_ids) or class_id(skill_ids) in ramas.CLASES_PRODUCCION:
         salida.append((10, 19814))
     for k, caja in enumerate(cajas_de(ids) + [GROWTH_BOX]):
         salida.append((20 + k, caja))

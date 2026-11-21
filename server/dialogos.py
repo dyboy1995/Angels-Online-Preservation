@@ -281,7 +281,8 @@ def armar_linea(mid: int, val: int = 4, opts: list = None, strings: list = None,
     # (Michael: ", I am Lyceum leader Michael", 21/10/2026). El oficial manda
     # 0 en las que no hacen nada (el Quit del 12301).
     acciones += [0] * (len(opts) - len(acciones))
-    cadenas_b = b''.join(s.encode('ascii', 'replace') + b'\x00' for s in strings)
+    import localizacion
+    cadenas_b = b''.join(localizacion.texto(s) + b'\x00' for s in strings)
     # El byte de relleno del +8 va SIEMPRE, con opciones o sin ellas. Se
     # llego a quitarlo creyendo que faltaba en las lineas con cadenas, por
     # haber copiado a mano un hex recortado de la captura; con eso todas las

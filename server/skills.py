@@ -9,20 +9,13 @@ Gestiona:
 """
 import pathlib
 import sqlite3
+import functools
+import ramas
 
 DB_PATH = pathlib.Path(__file__).parent.parent / 'corpus' / 'content.db'
 
-# Nombre en ingles de cada rama (ID 1..35)
-NOMBRE_RAMA = {
-    1: 'Life', 2: 'Wraith', 3: 'Chaos', 4: 'Earth', 5: 'Curse',
-    6: 'Meditate', 7: 'Hit', 8: 'Staff Hit', 9: 'Sword', 10: 'Axe',
-    11: 'Spear', 12: 'Enhance', 13: 'Grapple', 14: 'Shield', 15: 'Reserve',
-    16: 'Finesse', 17: 'Longbow', 18: 'Snipe', 19: 'Eagle Eye',
-    20: 'Collect', 21: 'Fishing', 22: 'Dig', 23: 'Lumber',
-    24: 'Mechanism', 25: 'Drive', 26: 'Weapon', 27: 'Armor',
-    28: 'Sew', 29: 'Technics', 30: 'Alchemy', 31: 'Cook',
-    32: 'Mantle', 33: 'Garment', 34: 'Vestment', 35: 'Avatar', 36: 'Assault'
-}
+# Nombre en ingles de cada rama (ID 1..36)
+NOMBRE_RAMA = ramas.NOMBRES
 
 # Mapeo a nombre chino en content.db (magic.xml)
 RAMA_A_CHINO = {
@@ -45,7 +38,7 @@ RAMA_A_CHINO = {
     17: '弓箭技能',  # Longbow
     18: '狙擊技能',  # Snipe
     19: '鷹眼技能',  # Eagle Eye
-    32: '影刃技能',  # Mantle
+    ramas.SHADOWBLADE: '影刃技能',
     35: '幻化技能',  # Avatar
     36: '奇襲技能',  # Assault
 }
@@ -56,7 +49,7 @@ CHINO_A_RAMA = {v: k for k, v in RAMA_A_CHINO.items()}
 # ramas en 技能限制1..5. Las de arma las aprende un guerrero; las de las
 # cuatro magias, un mago. Panther Killing, Bloody Storm y Crazy Roar caen
 # en el lado de arma.
-RAMAS_MELEE = (9, 10, 11, 14, 17, 32)
+RAMAS_MELEE = (9, 10, 11, 14, 17, ramas.SHADOWBLADE)
 RAMAS_MAGIA = (1, 2, 3, 4)
 GRUPO_COMUN_MIN = 1000
 GRUPO_COMUN_MAX = 1199
@@ -72,7 +65,7 @@ HECHIZOS_INICIALES_RAMA = {
     10: [(701, 'Basic Beating I'), (702, 'Ferocious Song I'), (703, 'Fighting Shield I')],
     11: [(801, 'Basic Attack I'), (802, 'Bloody Song I'), (803, 'Endless Energy I')],
     17: [(901, 'Basic Shot I'), (902, 'Accurate Song I'), (903, 'Dodge Step I')],
-    32: [(5401, 'Stab I'), (5406, 'Nimble I'), (5411, 'Poisoned Dagger I')],
+    ramas.SHADOWBLADE: [(5401, 'Stab I'), (5406, 'Nimble I'), (5411, 'Poisoned Dagger I')],
 }
 
 _SCROLL_CACHE = {}
@@ -299,7 +292,7 @@ def ranura_que_se_abre(nivel: int) -> int:
 # que es un hueco para ir a cambiarlo con el Skill Angel.
 #
 # Van en este orden y se coge la primera que no se lleve ya.
-RAMAS_RELLENO = (20, 21, 22, 23, 31, 30, 29, 28, 27, 26, 25, 24)
+RAMAS_RELLENO = (20, 21, 22, 23, 31, 29, 28, 27, 26, 25, 24)
 
 
 def completar_ranuras_extra(habilidades, nivel, banco=None):
@@ -419,7 +412,7 @@ def _clase_por_reglas(skill_ids) -> int:
         ids.add(s[0] if isinstance(s, (list, tuple)) else int(s))
 
     tiene_magia = bool(ids & {1, 2, 3, 4})
-    tiene_arma = bool(ids & {9, 10, 11, 32})
+    tiene_arma = bool(ids & {9, 10, 11, ramas.SHADOWBLADE})
     tiene_arco = (17 in ids)
 
     # Clases de oficios / produccion
@@ -430,7 +423,6 @@ def _clase_por_reglas(skill_ids) -> int:
     if 28 in ids:  return 12  # Tailor
     if 31 in ids:  return 15  # Chef
     if 29 in ids:  return 13  # Technician (Craft)
-    if 30 in ids and not (tiene_arma or tiene_magia): return 14  # Alchemist
 
     # Clases hibridas (magia + armas/arco)
     if tiene_magia and tiene_arco:
@@ -442,6 +434,7 @@ def _clase_por_reglas(skill_ids) -> int:
         return 16  # Wizard Jr.
 
     # Clases puras de combate
+    if ramas.SHADOWBLADE in ids: return 14
     if 9 in ids:   return 7   # Swordsman
     if 10 in ids:  return 6   # Warrior
     if 11 in ids:  return 8   # Spearman
@@ -462,8 +455,9 @@ def _clase_por_reglas(skill_ids) -> int:
     return 0  # Novice
 
 
+@functools.lru_cache(maxsize=32768)
 def skill_de_magia(magic_id: int):
-    """Devuelve el skill_id (1..35) de la rama a la que pertenece este hechizo/habilidad."""
+    """Devuelve el skill_id (1..36) de la rama a la que pertenece este hechizo/habilidad."""
     if not magic_id:
         return None
     mid = int(magic_id)
@@ -486,6 +480,12 @@ def skill_de_magia(magic_id: int):
     except Exception:
         pass
     return None
+
+
+def permite_magia_de_sombra(magic_id, habilidades):
+    return (skill_de_magia(magic_id) != ramas.SHADOWBLADE
+            or any((entry[0] if isinstance(entry, (tuple, list)) else entry) == ramas.SHADOWBLADE
+                   for entry in (habilidades or [])))
 
 
 def info_pergamino(item_id: int):
@@ -599,6 +599,10 @@ def numero_de_rama(txt) -> int:
         n = int(t)
         return n if n in NOMBRE_RAMA else 0
     tl = ' '.join(t.lower().split())
+    if tl == 'shadow blade':
+        return ramas.SHADOWBLADE
+    if tl == 'cooking':
+        return 31
     for sid, nom in NOMBRE_RAMA.items():
         if nom.lower() == tl:
             return sid

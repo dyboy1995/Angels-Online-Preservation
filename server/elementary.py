@@ -281,7 +281,7 @@ def _award(s):
             d.update(nivel=level,hp_max=p.hp_max+(level-p.nivel)*25,mp_max=p.mp_max+(level-p.nivel)*15)
             skills=[]
             for sid,lv,exp in p.habilidades:
-                exp+=sk;cap=min(combate.nivel_maximo(),level+(11 if 20<=sid<32 else 0))
+                exp+=sk;cap=clases.ramas.tope_nivel(sid,level)
                 while lv<cap and exp>=max(1,clases.exp_requerida_skill(lv,sid)):
                     exp-=max(1,clases.exp_requerida_skill(lv,sid));lv+=1
                 if lv>=cap:exp=min(exp,max(1,clases.exp_requerida_skill(lv,sid)))

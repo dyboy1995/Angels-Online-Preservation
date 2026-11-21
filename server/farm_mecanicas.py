@@ -159,7 +159,7 @@ def _experiencia(ses, exp=0, skill=0):
         for sid, nivel, puntos in p.habilidades or []:
             ganado = max(1, int(clases.exp_requerida_skill(nivel, sid) * skill))
             puntos += ganado
-            tope = p.nivel + 11 if sid in range(20, 32) else p.nivel
+            tope = clases.ramas.tope_nivel(sid, p.nivel)
             while nivel < tope and puntos >= max(1, clases.exp_requerida_skill(nivel, sid)):
                 puntos -= max(1, clases.exp_requerida_skill(nivel, sid))
                 nivel += 1

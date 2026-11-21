@@ -224,11 +224,14 @@ def tiene_faccion(p) -> bool:
 
     Medido en Celestia: un personaje de nivel 12 con la ficha en "Heaven"
     NO puede usar las Superwing. Hay que elegir faccion en el Graduation
-    Palace primero.
+    Palace primero. The local Simplified Chinese compatibility profile permits
+    early use; the original profile keeps the measured restriction.
     """
     import login as _lgf
     if p is None:
         return False
+    if os.environ.get('AO_CLIENT_PROTOCOL') == 'cn-8.6.5.7':
+        return True
     return (_lgf.CODIGO_FACCION.get(getattr(p, 'faction', ''), 5)
             in FACCIONES_REALES)
 
@@ -1676,18 +1679,7 @@ def _probar_gm(ses, cuerpo, addr) -> bool:
         _p = ses.personaje
 
         def _num_rama(txt):
-            """El numero de una rama, por numero o por nombre."""
-            t = str(txt).strip()
-            if t.isdigit():
-                return int(t)
-            tl = t.lower()
-            for sid, nom in _cl_rm.NOMBRE_RAMA.items():
-                if nom.lower() == tl:
-                    return sid
-            for sid, nom in _cl_rm.NOMBRE_RAMA.items():
-                if nom.lower().startswith(tl):
-                    return sid
-            return 0
+            return _sk_rm.numero_de_rama(txt)
 
         _dentro = _num_rama(leido[2])
         if not _dentro or _dentro not in _cl_rm.NOMBRE_RAMA:
@@ -2876,7 +2868,7 @@ def _invocar_lord_playground(ses, lord_type: int, lord_nombre: str, m_muerto, ad
     aviso_pkg = _cl.aviso(aviso_texto, tipo=0, msg_id=_cl.MSG_TEXTO)
 
     frase_lord = FRASES_LORDS_SPAWN.get(lord_type, "Feel the elemental power!")
-    chat_pkg = _decir(lord_eid, nombre, frase_lord)
+    chat_pkg = _decir(lord_eid, nombre, frase_lord, sistema=True)
 
     paquetes = [sp_pkg, aviso_pkg, chat_pkg]
     ses.enviar_inmediato(*paquetes)
@@ -6798,7 +6790,7 @@ def _generar_zona(ses, addr, stage, tag, cuantos=None):
     log.info('[%s] GENERATE zona %s en %s: %d x %s', addr, tag, stage, n, g['tipos'])
 
 
-def _decir(eid, nombre, texto):
+def _decir(eid, nombre, texto, *, sistema=False):
     """s2c 0x0017: alguien DICE algo, con su bocadillo encima.
 
     Leido en el cliente con REA (005f1590, la entrada 0x17 de la tabla de
@@ -6808,9 +6800,15 @@ def _decir(eid, nombre, texto):
     Magic Kichen Path ("Too hot!", 64958) llega justo asi, como 0x0017 con la
     entidad y el nombre del propio jugador.
     """
-    n = (nombre or '').encode('latin-1', 'replace')[:16]
+    if sistema:
+        import localizacion
+        n = localizacion.codificar(nombre or '', limite=16, legacy='latin-1')
+        mensaje = localizacion.codificar(localizacion.traducir(texto or ''), limite=200, legacy='latin-1')
+    else:
+        n = (nombre or '').encode('latin-1', 'replace')[:16]
+        mensaje = (texto or '').encode('latin-1', 'replace')[:200]
     return (struct.pack('<HI', 0x0017, int(eid)) + n + bytes(17 - len(n))
-            + (texto or '').encode('latin-1', 'replace')[:200] + b'\x00')
+            + mensaje + b'\x00')
 
 
 def _hablar_jugador(ses, texto):
@@ -6844,7 +6842,7 @@ def _jefe_que_habla(ses):
     return max(gen, key=lambda m: m.entity_id) if gen else None
 def _hablar_monstruo(ses, m, texto):
     """Un bicho dice algo (le llega a todos los de la sala por _espejar)."""
-    ses.enviar(_decir(m.entity_id, getattr(m, 'nombre', '') or '', texto))
+    ses.enviar(_decir(m.entity_id, getattr(m, 'nombre', '') or '', texto, sistema=True))
 
 
 # Lo que dicen los jefes al aparecer. Son frases del string.xml del cliente
@@ -6872,7 +6870,9 @@ def _texto_string(sid):
                 _STRINGS[int(k)] = v
         except Exception:
             log.debug('string.xml', exc_info=True)
-    return _STRINGS.get(int(sid), '')
+    original = _STRINGS.get(int(sid), '')
+    import localizacion
+    return localizacion.nombre('string', sid, original)
 
 
 def _monstruo_con_evento(ses, addr, stage, npc_type, evento, segundos, tag):
@@ -7520,7 +7520,7 @@ def _dar_exp_habilidad(ses, skill_id, puntos):
     for sid, nivel, pts in p.habilidades or []:
         if int(sid) == int(skill_id) and not dada:
             pts += int(puntos)
-            tope = p.nivel + 11 if sid in range(20, 32) else p.nivel
+            tope = clases.ramas.tope_nivel(sid, p.nivel)
             while nivel < tope and pts >= max(1, clases.exp_requerida_skill(nivel, sid)):
                 pts -= max(1, clases.exp_requerida_skill(nivel, sid))
                 nivel += 1
@@ -7677,12 +7677,12 @@ def _logros_dar(ses, addr, lid):
         return False
     f = _lg_d.de_id(lid) or {}
     ses.enviar(_cl_d.aviso('Achievement completed: [%s] (+%d points)'
-                           % (f.get('nombre') or lid, int(f.get('puntos') or 0)), tipo=0))
+                           % (_lg_d.nombre_logro(lid), int(f.get('puntos') or 0)), tipo=0))
     _ap = getattr(p, 'apariencia', None) or [0]
     for _t in sorted(set(_lg_d.titulos_de(p.logros)) - antes):
         ses.enviar(_lg_d.paquete_titulo_nuevo(p.entity_id, _t))
-        _bc = _cl_d.chat_super_broadcast(0, p.nombre, '%s has obtained the title [%s]!'
-                                         % (p.nombre, _lg_d.nombre_titulo(_t)), int(_ap[0]) & 1)
+        _bc = _cl_d.chat_super_broadcast(0, p.nombre, _lg_d.aviso_titulo(p.nombre, _t),
+                                        int(_ap[0]) & 1, sistema=True)
         receptores = {id(x): x for x in _tw_sesiones()}
         receptores[id(ses)] = ses
         for _s in receptores.values():
@@ -8200,7 +8200,7 @@ def _logros_actualizar(ses, addr=None, enviar=False, silencioso=False):
         for lid in nuevos:
             f = _lg_a.de_id(lid) or {}
             mandar(_cl_a.aviso('Achievement completed: [%s] (+%d points)'
-                               % (f.get('nombre') or lid, int(f.get('puntos') or 0)), tipo=0))
+                               % (_lg_a.nombre_logro(lid), int(f.get('puntos') or 0)), tipo=0))
         nuevos_t = set(_lg_a.titulos_de(p.logros)) - titulos_antes
         if nuevos_t:
             # Como en el original: la primera vez que se consigue un titulo
@@ -8209,7 +8209,7 @@ def _logros_actualizar(ses, addr=None, enviar=False, silencioso=False):
             _sel = int(_ap[0]) & 1 if _ap else 0
             for _t in sorted(nuevos_t):
                 _bc = _cl_a.chat_super_broadcast(
-                    0, p.nombre, '%s has obtained the title [%s]!' % (p.nombre, _lg_a.nombre_titulo(_t)), _sel)
+                    0, p.nombre, _lg_a.aviso_titulo(p.nombre, _t), _sel, sistema=True)
                 if silencioso:
                     # El Super BC a los demas va despues, junto con el resto.
                     pendientes.append(('bc', _bc))
@@ -9504,8 +9504,6 @@ def _otorgar_skill_exp(ses, p, yo, arma_puesta=0, magic_id=0, accion=None, skill
     mult = configuracion.multiplicador_skill_exp(getattr(p, 'buffs', None))
     exp_ganada = max(1, int(round(1 * mult)))
 
-    SKILLS_PRODUCTOR = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
-
     # Las habilidades de arma de TODO lo equipado, no solo de la ranura del
     # arma: un Protector con hacha y escudo entrena Axe y Shield, y asi sale
     # en las capturas de Celestia.
@@ -9541,7 +9539,7 @@ def _otorgar_skill_exp(ses, p, yo, arma_puesta=0, magic_id=0, accion=None, skill
             nuevas_habs.append((sid, slv, sexp))
             continue
         sexp += exp_ganada
-        max_lv = (p.nivel + 11) if sid in SKILLS_PRODUCTOR else p.nivel
+        max_lv = _cl.ramas.tope_nivel(sid, p.nivel)
         # La experiencia que pide cada nivel sale de level.xml por rama (sid 1..36).
         req = max(1, _cl.exp_requerida_skill(slv, sid))
         while sexp >= req and slv < max_lv:
@@ -9965,7 +9963,8 @@ class Servidor:
                                         "I will become the strongest pet ever!",
                                         "Yay! Training makes me happy!"
                                     ]
-                                    ses.enviar(_decir(p_eid, p_info.get('name') or 'Pet', _rnd_pet.choice(_p_frases)))
+                                    ses.enviar(_decir(p_eid, p_info.get('name') or 'Pet',
+                                                      _rnd_pet.choice(_p_frases), sistema=True))
 
                                 if exp_ganada > 0 and _c_pet_loop.owner_id == ses.personaje.char_id:
                                     p_mascs = getattr(ses.personaje, 'mascotas', None)
@@ -10896,6 +10895,9 @@ class Servidor:
                     self._procesar_chat_mundo(ses, '!' + txt, addr)
                 else:
                     self._procesar_chat_mundo(ses, txt, addr)
+            return
+
+        if __import__('seguridad_comercio').procesar(ses, opcode, cuerpo):
             return
 
         if __import__('league_war').process(ses,opcode,cuerpo):
@@ -13049,6 +13051,12 @@ class Servidor:
             if not d3:
                 return
             tipo, objetivo = d3
+            if (tipo != _cb.ATAQUE_NORMAL
+                    and not __import__('skills').permite_magia_de_sombra(
+                        tipo, getattr(ses.personaje, 'habilidades', None))):
+                import clases as _cl_rama
+                ses.enviar(_cl_rama.aviso('Equip the ShadowBlade skill branch to use this skill.', tipo=0))
+                return
             # Aturdido, congelado... no ataca; silencio: sin hechizos; sello:
             # sin posturas.
             if ses.personaje and _cb.bloqueado_por_control(ses.personaje, tipo, time.time(),

@@ -865,7 +865,11 @@ del item Freshman en item.xml:
     Shield    (14) -> 19820 FreshmanRound Shield    盾
     Longbow   (17) -> 19844 FreshmanCatapult        彈弓
     Mechanism (24) -> 19814 FreshmanCask            機甲
-    Mantle    (32) -> 19856 FreshmanSharp Knife     影刃
+    ShadowBlade (30) -> 19856 FreshmanSharp Knife   影刃
+
+Correccion 2026-11-20: skill.xml ingles, GB y Big5 coinciden en ShadowBlade=30
+y Mantle=32. La antigua asociacion Mantle->cuchillo era incorrecta; ver
+[revision de ramas](SHADOWBLADE_BRANCH_FIX_2026-11-20.md).
 
 El emparejamiento sale de los nombres, no de una captura. Lo unico medido es
 el Swordsman, y ahi el privado entrego DOS armas (ranuras 3 y 4) y ademas dio
@@ -963,8 +967,9 @@ lleve creado el tiempo suficiente.
                          izquierda. Es el Protector; el personaje de nivel 42
                          capturado lo confirma (Sword, Axe, Grapple, Shield,
                          Reserve, Garment -> Protector)
-    Sword (9) o Mantle   dos armas iguales. Lo del Swordsman esta MEDIDO: el
+    Sword (9)           dos armas iguales. Lo del Swordsman esta MEDIDO: el
                          servidor privado entrego dos Sabre, ranuras 3 y 4
+    ShadowBlade (30)    un cuchillo en la derecha; Mantle (32) no entrega arma
     magia sin arma       FreshmanWalking Stick: las clases magicas no tienen
                          habilidad de arma cuerpo a cuerpo pero llevan baston
     produccion           nada: Chef y similares no tienen habilidad de arma

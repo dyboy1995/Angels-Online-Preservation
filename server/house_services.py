@@ -2,6 +2,7 @@
 import functools
 import pathlib
 import re
+import sqlite3
 import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -37,7 +38,7 @@ RESOURCES = {
 }
 
 @functools.lru_cache(maxsize=None)
-def xml_rows(name):
+def xml_rows(name, include_big5=False):
     candidates = []
     for folder in (ROOT / 'extracted_paks').iterdir():
         low = folder.name.lower()
@@ -45,15 +46,34 @@ def xml_rows(name):
         if low != 'data1' and not match:
             continue
         order = -1 if low == 'data1' else int(match.group(1) or 0)
-        for localized in (False, True):
-            path = folder / 'setting' / ('eng/' + name if localized else name)
+        locales = (((None, 0), ('big5', 1), ('eng', 2)) if include_big5
+                   else ((None, 0), ('eng', 2)))
+        for locale, priority in locales:
+            path = folder / 'setting' / ((locale + '/') if locale else '') / name
             if path.is_file():
-                candidates.append((order, localized, path))
+                candidates.append((order, priority, path))
     if not candidates:
         return {}
     path = max(candidates, key=lambda x: (x[0], x[1]))[2]
     return {int(e.get('編號')): dict(e.attrib)
             for e in ET.parse(path).getroot() if str(e.get('編號', '')).isdigit()}
+
+
+@functools.lru_cache(maxsize=None)
+def monster_identity(identifier):
+    try:
+        row = xml_rows('monster.xml').get(int(identifier))
+    except FileNotFoundError:
+        row = None
+    if row:
+        return row['名稱'], int(row['圖號'])
+    database = ROOT / 'corpus' / 'content.db'
+    with sqlite3.connect(database.resolve().as_uri() + '?mode=ro', uri=True) as connection:
+        row = connection.execute('SELECT name,sprite_id FROM monster WHERE id=?',
+                                 (str(int(identifier)),)).fetchone()
+    if row and row[0] and row[1]:
+        return row[0], int(row[1])
+    raise ValueError('Missing monster identity: %s' % identifier)
 
 @functools.lru_cache(maxsize=1)
 def mercenaries():

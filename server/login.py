@@ -22,6 +22,7 @@ import sys
 import json
 import time
 import logging
+import os
 import struct
 import pathlib
 from dataclasses import dataclass, field
@@ -162,11 +163,14 @@ def _mapas_sin_minimapa():
     return _SIN_MINIMAPA
 
 
-def flags_de_mapa(stage, base=b''):
+def flags_de_mapa(stage, base=b'', *, perfil=None):
     """El 0x0014: flags de mapa. Con el bit 0x20 el cliente desactiva el mapa
     (minimapa y Scene Map en negro, sin puntos ni carteles); va en los mapas
     sin minimapa y en el resto el 0x0205 de la captura oficial."""
     flags = FLAGS_MAPA | (SIN_MAPA if int(stage or 0) in _mapas_sin_minimapa() else 0)
+    perfil = perfil if perfil is not None else os.environ.get('AO_CLIENT_PROTOCOL', 'igg')
+    if perfil == 'cn-8.6.5.7':
+        return struct.pack('<HIBBBi', 0x0014, flags, 12, 0, 0, -1)
     # Mide 7 bytes: los flags y 'ff 00 00' detras (captura oficial). Con
     # solo los 4 de los flags el cliente leia de mas y se cerraba al entrar.
     resto = bytes(base[4:7]) if len(base) >= 7 else RESTO_FLAGS_MAPA
@@ -1568,7 +1572,7 @@ def _ficha(p, base):
     # REA5E9C90 copies the native recipe bitmap from packet+1877.
     if len(crudo)>=1877+2048:
         crudo[1877:1877+2048]=__import__('production_sites').bits(p)
-    return bytes(crudo)
+    return __import__('seguridad_comercio').ajustar_ficha(bytes(crudo), p.stage)
 
 
 def _quests(p, base):

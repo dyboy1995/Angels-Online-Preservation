@@ -51,13 +51,13 @@ CHINO_SKILL = {
     "吟咒技能": "Curse", "冥想技能": "Meditate", "魔導技能": "Hit", "法杖技能": "Staff Hit",
     "劍術技能": "Sword", "斧錘技能": "Axe", "槍術技能": "Spear", "強身技能": "Enhance",
     "格鬥技能": "Grapple", "盾防技能": "Shield", "蓄勁技能": "Reserve", "巧手技能": "Finesse",
-    "弓箭技能": "Longbow", "狙擊技能": "Snipe", "鷹眼技能": "Eagle Eye", "影刃技能": "Mantle",
+    "弓箭技能": "Longbow", "狙擊技能": "Snipe", "鷹眼技能": "Eagle Eye", "影刃技能": "ShadowBlade",
     "幻化技能": "Avatar", "奇襲技能": "Assault",
 }
 SKILL_FAMILIES = [
     ("Magic", ["Life", "Wraith", "Chaos", "Earth", "Curse", "Meditate", "Hit", "Staff Hit"]),
     ("Combat", ["Sword", "Axe", "Spear", "Enhance", "Grapple", "Shield", "Reserve",
-                "Finesse", "Longbow", "Snipe", "Eagle Eye", "Mantle", "Avatar", "Assault"]),
+                "Finesse", "Longbow", "Snipe", "Eagle Eye", "ShadowBlade", "Avatar", "Assault"]),
 ]
 
 CAT_EN = {

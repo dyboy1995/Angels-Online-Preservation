@@ -297,9 +297,9 @@ def room(r):
             typ=9238 if r['kind']==1 else (9264,9359,9360,23221)[r['tier']]
             tag=10+team if r['kind']==1 else 9
             tile=(eventos.casillas_de_tag(r['stage'],tag) or [_spawn_tile(r,team)])[0]
-            row=__import__('house_services').xml_rows('monster.xml')[typ]
+            name,sprite=__import__('house_services').monster_identity(typ)
             eid=89000000+r['stage']*10+team
-            m=combate.Monstruo(eid,typ,row['\u540d\u7a31'],tile,int(row['\u5716\u865f']),stage=r['stage'])
+            m=combate.Monstruo(eid,typ,name,tile,sprite,stage=r['stage'])
             m.daily_objective=True;m.daily_team=team;m.daily_round=r['id'];m.agro=0;m.move_speed=0;m.generado=True
             e.monstruos[eid]=m
     if r['kind']==KIND_QUICK_REFLEXES:_repartir_cofres(r,e)

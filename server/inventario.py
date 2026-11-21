@@ -422,13 +422,13 @@ def _bonus(item_id: int) -> dict:
                               'atk_lightning': 0, 'atk_fire': 0, 'atk_ice': 0, 'atk_corrosion': 0})
 
 
-def bonos_de_habilidades(habilidades):
+def bonos_de_habilidades(habilidades, bolsa=None):
     """Lo que suman las habilidades: vida, mana, carga, barras de SP y stats.
 
     OJO: esta tabla esta escrita a mano, no sale de los datos del cliente.
     En `content.db` no hay ninguna tabla de habilidades -- la tabla `level`
     solo trae la experiencia que pide cada nivel de cada rama -- asi que
-    estos numeros no estan verificados contra nada. El HP no lo da el arma
+    las ramas 30, 35 y 36 se contrastaron con skill.xml. El HP no lo da el arma
     (Sword no sube vida, cura): lo dan las pasivas, Enhance y Grapple.
 
     Se saco de dentro de stats() porque el tope de vida hacia falta en dos
@@ -456,6 +456,9 @@ def bonos_de_habilidades(habilidades):
     sk_agi = 0
     sk_matk = 0
     sk_mdef = 0
+    import clases
+    arma = (bolsa or {}).get(3) or (bolsa or {}).get('3') or 0
+    sombra_equipada = bool(arma) and clases.skill_de_item(arma) == clases.ramas.SHADOWBLADE
 
     if habilidades:
         for h in habilidades:
@@ -494,6 +497,14 @@ def bonos_de_habilidades(habilidades):
             elif sid == 19:   # Eagle Eye: +2 rigor, +2 agi base, +1 rigor y +1 agi por nivel
                 sk_rigor += 2 + extra
                 sk_agi += 2 + extra
+            elif sid == clases.ramas.SHADOWBLADE:
+                sk_atk += 2 + (extra if sombra_equipada else 0)
+                sk_agi += 2
+            elif sid == clases.ramas.AVATAR:
+                sk_agi += 4 + (extra if sombra_equipada else 0)
+            elif sid == clases.ramas.ASSAULT:
+                sk_rigor += 2 + (extra if sombra_equipada else 0)
+                sk_agi += 2 + (extra if sombra_equipada else 0)
             elif sid == 32:   # Mantle: +3 def, +1 agi, +60 carga
                 sk_def += 3
                 sk_agi += 1
@@ -996,7 +1007,7 @@ def stats(bolsa=None, habilidades: list = None,
     p = _plantillas()
     b = bytearray(bytes.fromhex(p['stats_sin_ropa']))
 
-    _b = bonos_de_habilidades(habilidades)
+    _b = bonos_de_habilidades(habilidades, bolsa)
     base_atk, base_def, base_rigor = 7, 6, 7
     base_agi, base_matk, base_mdef = 6, 5, 5
     base_crit = 5

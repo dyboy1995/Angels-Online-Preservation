@@ -261,7 +261,7 @@ def entregar(ses, automatico=False, stage=None):
                         amount = int(awards.get(int(sid),0))
                         if amount:
                             points += amount
-                            cap = min(combate.nivel_maximo(),int(data['nivel'])+(11 if int(sid) in range(20,32) else 0))
+                            cap = clases.ramas.tope_nivel(sid,data['nivel'])
                             while level<cap and points>=max(1,clases.exp_requerida_skill(level,sid)):
                                 points -= max(1,clases.exp_requerida_skill(level,sid))
                                 level += 1

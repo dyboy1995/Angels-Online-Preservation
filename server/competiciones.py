@@ -184,16 +184,23 @@ def anunciar(texto):
 def anunciar_resultados(r):
     """Native result notices, based only on the committed final placements."""
     import app, struct
+    import localizacion
     if r['stage'] not in ARENAS or not r.get('clasificacion') or r.get('motivo') in ('gm','gm stop','cancelled'):
         return
     ranking = [(i+1,r['miembros'][cid]['nombre']) for i,cid in enumerate(r['clasificacion'][:10])]
     anunciar('The Angel Arena event results are coming in.')
-    anunciar('The results of the Angel Arena are coming... '+', '.join('%d place %s' % x for x in ranking))
+    if localizacion.activa():
+        ranking_text = ', '.join('第%d名 %s' % x for x in ranking)
+        anunciar('战天使擂台结果即将公布：' + ranking_text)
+    else:
+        anunciar('The results of the Angel Arena are coming... '+', '.join('%d place %s' % x for x in ranking))
     for place,name in ranking:
         # S2C0128 channel13 selects native banner variant1 (005f3b40).
         # This is separate from ordinary Super BC channel11 / variant0.
-        author = name.encode('latin-1','replace')[:16].ljust(17,b'\0')
-        message = ('0%d place : player %s.' % (place,name)).encode('latin-1','replace')+b'\0'
+        author = localizacion.codificar(name, limite=16, legacy='latin-1').ljust(17, b'\0')
+        original = '0%d place : player %s.' % (place,name)
+        translated = '第%d名：玩家%s。' % (place, name) if localizacion.activa() else original
+        message = localizacion.codificar(translated, legacy='latin-1')+b'\0'
         app._tw_difundir(struct.pack('<HIB17s',0x0128,0,13,author)+message)
 
 

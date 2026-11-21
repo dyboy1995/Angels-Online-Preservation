@@ -113,13 +113,13 @@ def publicar(actualizaciones):
         for lid in nuevos:
             f = logros.de_id(lid)
             ses.enviar(clases.aviso('Achievement completed: [%s] (+%d points)' %
-                                   (f['nombre'], f.get('puntos', 0)), tipo=0))
+                                   (logros.nombre_logro(lid), f.get('puntos', 0)), tipo=0))
         for titulo in set(logros.titulos_de(p.logros))-previos:
             ses.enviar(logros.paquete_titulo_nuevo(p.entity_id, titulo))
             apariencia = getattr(p,'apariencia',None) or [0]
             bc = clases.chat_super_broadcast(0,p.nombre,
-                '%s has obtained the title [%s]!' % (p.nombre,logros.nombre_titulo(titulo)),
-                int(apariencia[0]) & 1)
+                logros.aviso_titulo(p.nombre, titulo),
+                int(apariencia[0]) & 1, sistema=True)
             for visor in sesiones.values():
                 visor.enviar(bc)
         if nuevos and not getattr(ses, 'mapa_cargando', False):

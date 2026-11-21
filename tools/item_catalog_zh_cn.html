@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>天使之恋 · 中文道具查询</title>
+<style>
+:root{
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;
+  color:#172f3f;background:#eef4f8;
+  --ink:#172f3f;--muted:#62798a;--line:#d5e1e9;--line-strong:#b9cbd7;
+  --surface:#fff;--surface-soft:#f7fafc;--accent:#146b91;--accent-strong:#0d4e6b;
+  --accent-soft:#e8f3f9;--warn:#7a4f00;--warn-bg:#fff5d9;--danger:#a23a2b;
+  --shadow:0 10px 30px rgba(22,57,78,.07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:linear-gradient(180deg,#e8f1f6 0,#f4f8fb 260px,#f4f8fb 100%)}
+button,input,select{font:inherit}
+button{color:var(--accent)}
+.shell{max-width:1520px;margin:0 auto;padding:30px 28px 52px}
+.titlebar{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.eyebrow{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.12em}
+h1{margin:0;color:#103b54;font-size:32px;line-height:1.25}
+.build{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.7;text-align:right;white-space:nowrap}
+.lead{max-width:1100px;margin:14px 0 0;color:#405b6d;font-size:15px;line-height:1.75}
+.lead code{white-space:nowrap}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 16px}
+.stat{display:inline-flex;align-items:baseline;gap:6px;padding:7px 11px;border:1px solid var(--line);
+  border-radius:999px;background:rgba(255,255,255,.75);color:var(--muted);font-size:12px}
+.stat strong{color:var(--ink);font-size:14px;font-variant-numeric:tabular-nums}
+.note{padding:14px 17px;border:1px solid #ead7a6;border-left:4px solid #b68116;border-radius:8px;
+  background:var(--warn-bg);color:#5d4a20;font-size:13px;line-height:1.7}
+.note strong{color:var(--warn)}
+.note details{margin-top:7px}
+.note summary{cursor:pointer;color:#775517;font-weight:700}
+.note details p{margin:7px 0 0;color:#66542c;font-size:13px;line-height:1.7;white-space:normal}
+.filters{margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
+.search-row{display:flex;align-items:flex-end;gap:10px}
+.search-field{flex:1}
+.field{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:13px;font-weight:700}
+.field-hint{color:#7b91a0;font-size:12px;font-weight:400;line-height:1.45}
+.filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:13px}
+input:not([type="checkbox"]),select{width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--line-strong);
+  border-radius:8px;background:#fff;color:var(--ink);outline:none}
+input:not([type="checkbox"]):focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(20,107,145,.13)}
+input::placeholder{color:#97a8b3}
+button{min-height:42px;padding:9px 14px;border:1px solid transparent;border-radius:8px;background:var(--accent);
+  color:#fff;font-weight:700;cursor:pointer}
+button:hover{background:var(--accent-strong)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid rgba(20,107,145,.28);outline-offset:2px}
+button:disabled{opacity:.42;cursor:default}
+button.secondary{background:#fff;border-color:var(--line-strong);color:var(--accent)}
+button.secondary:hover{background:var(--accent-soft);border-color:#9fc1d3}
+.reset{flex:none;white-space:nowrap}
+.check-field{display:flex;align-items:center;gap:9px;align-self:end;min-height:42px;padding:9px 11px;
+  border:1px solid var(--line-strong);border-radius:8px;background:var(--surface-soft);
+  color:var(--ink);font-size:14px;font-weight:500;cursor:pointer}
+.check-field input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.error{margin:11px 0 0;color:var(--danger);font-size:13px;font-weight:700}
+.results{margin-top:20px}
+.result-bar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:10px}
+.result-summary{min-width:0}
+#count{margin:0;color:var(--ink);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+#range{margin:4px 0 0;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.scroll-hint{display:none;margin:6px 0 0;color:var(--muted);font-size:12px}
+.page-size-field{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;white-space:nowrap}
+.page-size-field select{width:auto;min-height:36px;padding:6px 28px 6px 9px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{width:100%;min-width:1080px;border-collapse:collapse;font-size:14px}
+thead th{background:#173d52;color:#fff;text-align:left;font-size:12px;font-weight:700;white-space:nowrap}
+thead th:not([data-sort]){padding:12px 14px}
+.sort-button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  min-height:0;padding:12px 14px;border:0;border-radius:0;background:transparent;color:inherit;
+  font-size:12px;font-weight:700;text-align:left;letter-spacing:.02em}
+.sort-button:hover{background:rgba(255,255,255,.09)}
+.sort-indicator{color:#a9d8ec;font-size:12px;opacity:.68}
+th[aria-sort="ascending"] .sort-indicator,th[aria-sort="descending"] .sort-indicator{opacity:1}
+tbody td{padding:11px 14px;border-bottom:1px solid #e7eef3;vertical-align:top}
+tbody tr:nth-child(even){background:#f8fbfc}
+tbody tr:hover{background:#eef7fb}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{width:84px}
+td:nth-child(2){min-width:185px;max-width:270px}
+td:nth-child(3){min-width:250px;max-width:430px}
+td:nth-child(5){width:106px;white-space:nowrap}
+td:last-child{min-width:175px}
+.id-code{display:inline-block;padding:2px 6px;border-radius:5px;background:#edf3f7;color:#3d5b6d;
+  font-family:Consolas,"Cascadia Mono",monospace;font-size:12px}
+.item-name{color:#115a7a;font-weight:700;overflow-wrap:anywhere}
+.missing{color:#a3520c;font-weight:700}
+.server-name{display:block;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;margin:0 4px 2px 0;padding:2px 8px;border:1px solid var(--line);
+  border-radius:999px;background:#f3f8fa;color:#4f6878;font-size:12px;line-height:1.55;white-space:nowrap}
+.badge.kind{background:var(--accent-soft);border-color:#c6dfec;color:#275e78}
+.badge.q-white{background:#f3f5f7;border-color:#d7dee4;color:#566772}
+.badge.q-green{background:#eaf6ed;border-color:#c8e4d0;color:#356b45}
+.badge.q-blue{background:#e7f2fb;border-color:#c3dcf0;color:#1d5e8e}
+.badge.q-purple{background:#f2ebf9;border-color:#ddccef;color:#67478d}
+.badge.q-yellow{background:#fff6d9;border-color:#eedca2;color:#7d5a00}
+.badge.q-gold{background:#fbf0d8;border-color:#e7cf9c;color:#866000}
+.badge.q-orange{background:#fff0e5;border-color:#efd1b9;color:#9a561f}
+.badge.q-red{background:#fbe9e7;border-color:#ebc4be;color:#973d32}
+.badge.q-other{background:#f3ecfa;border-color:#ddccef;color:#67478d}
+.level-cell{font-weight:700;color:#284e63;font-variant-numeric:tabular-nums}
+.level-cell.none{color:#99aab5;font-weight:400}
+.command{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.command code{padding:3px 6px;border-radius:5px;background:#f1f5f8;color:#365365;
+  font-family:Consolas,"Cascadia Mono",monospace;font-size:12px;user-select:all}
+button.copy{min-height:0;padding:4px 8px;border-color:var(--line-strong);background:#fff;
+  color:var(--accent);font-size:12px;font-weight:700}
+button.copy:hover{background:var(--accent-soft)}
+details{margin-top:7px;max-width:540px}
+summary{cursor:pointer;color:var(--accent);font-size:12.5px;font-weight:700}
+summary:hover{color:var(--accent-strong)}
+tbody details p{margin:8px 0 0;padding-left:10px;border-left:2px solid var(--line);
+  color:#435e70;font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.empty{padding:42px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;margin-bottom:5px;color:var(--ink);font-size:16px}
+.empty p{margin:0 0 14px}
+.empty button{margin:0 auto}
+.pager{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:12px}
+.pager-buttons{display:flex;flex-wrap:wrap;gap:6px}
+.pager-buttons button{min-height:36px;padding:6px 11px;font-size:13px}
+.page-status{color:#3d5c70;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.jump-form{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.jump-form input{width:76px;min-height:36px;padding:6px 8px}
+.jump-form button{min-height:36px;padding:6px 10px;font-size:13px}
+.footnote{max-width:1120px;margin:13px 0 0;color:var(--muted);font-size:12px;line-height:1.75}
+.footnote code{white-space:nowrap}
+.toast{position:fixed;right:22px;bottom:22px;z-index:20;max-width:min(390px,calc(100vw - 44px));
+  padding:10px 14px;border-radius:8px;background:#173d52;color:#fff;font-size:13px;
+  box-shadow:0 12px 30px rgba(10,35,50,.28);opacity:0;transform:translateY(8px);
+  pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.toast.show{opacity:1;transform:none}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
+  margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+@media(max-width:980px){
+  .shell{padding:22px 18px 42px}
+  .titlebar{flex-direction:column;gap:10px}
+  .build{text-align:left;white-space:normal}
+  .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .shell{padding:16px 14px 36px}
+  h1{font-size:25px}
+  .lead{font-size:14px}
+  .search-row{flex-direction:column;align-items:stretch}
+  .filter-grid{grid-template-columns:1fr}
+  .result-bar{align-items:flex-start;flex-direction:column}
+  .pager{align-items:flex-start;justify-content:flex-start}
+  .pager-buttons{width:100%}
+  .pager-buttons button{flex:1;white-space:nowrap}
+  .jump-form{width:100%}
+  .scroll-hint{display:block}
+  .toast{right:14px;bottom:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .toast{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="titlebar">
+      <div>
+        <p class="eyebrow">ANGELS ONLINE · 本机离线资料</p>
+        <h1>天使之恋 · 中文道具查询</h1>
+      </div>
+      <p class="build">数据生成于 __GENERATED_AT__<br>不连接游戏 · 不执行 GM 命令</p>
+    </div>
+    <p class="lead">按 ID、中文名、服务端名或分类检索；可组合等级区间、品质和中文映射筛选，点击表头或使用排序下拉。查到 ID 后复制 <code>/item ID 1</code>，在 Preservation 服务端使用。</p>
+    <div class="stats" id="summary" aria-label="目录概况"></div>
+    <div class="note">
+      <strong>有记录不等于可用或可掉落。</strong>缺中文映射、测试/隐藏或新版本道具请先用小号核验。
+      <details>
+        <summary>数据口径与翻译说明</summary>
+        <p>数据来自服务端 <code>corpus/content.db</code>，中文名称与说明来自当前客户端的本地汉化数据。说明优先采用客户端官方中文并转为简体；少数未提供官方译文的旧活动文案显示“暂无官方中文说明”。</p>
+      </details>
+    </div>
+  </header>
+
+  <main>
+    <section class="filters" aria-labelledby="filters-title">
+      <h2 class="visually-hidden" id="filters-title">搜索、筛选与排序</h2>
+      <div class="search-row">
+        <label class="field search-field">
+          <span>搜索道具</span>
+          <span class="field-hint" id="search-hint">ID、中文名、服务端名或分类；空格分隔的关键词需同时匹配</span>
+          <input id="query" type="search" aria-describedby="search-hint" placeholder="例如：19814、药水、Superwing、劍">
+        </label>
+        <button id="reset" class="secondary reset" type="button">清除筛选</button>
+      </div>
+      <div class="filter-grid">
+        <label class="field">分类
+          <select id="category" aria-label="按道具分类筛选"><option value="">全部分类</option></select>
+        </label>
+        <label class="field">品质
+          <select id="quality" aria-label="按品质筛选"><option value="">全部品质</option></select>
+        </label>
+        <label class="field">中文名称
+          <select id="coverage" aria-label="按中文名称覆盖筛选">
+            <option value="">全部道具</option>
+            <option value="yes">有中文映射</option>
+            <option value="no">无中文映射（注意兼容性）</option>
+          </select>
+        </label>
+        <label class="field">排序
+          <select id="sort" aria-label="排序方式">
+            <option value="id-asc">ID · 升序</option>
+            <option value="id-desc">ID · 降序</option>
+            <option value="level-asc">等级 · 低到高（空值最后）</option>
+            <option value="level-desc">等级 · 高到低（空值最后）</option>
+            <option value="zh-asc">中文名 · A 到 Z</option>
+            <option value="zh-desc">中文名 · Z 到 A</option>
+            <option value="en-asc">服务端名 · A 到 Z</option>
+            <option value="en-desc">服务端名 · Z 到 A</option>
+            <option value="kind-asc">分类 · A 到 Z</option>
+            <option value="kind-desc">分类 · Z 到 A</option>
+            <option value="quality-desc">品质 · 高到低</option>
+            <option value="quality-asc">品质 · 低到高</option>
+          </select>
+        </label>
+        <label class="field">最低等级
+          <input id="level-min" type="number" inputmode="numeric" placeholder="不限">
+        </label>
+        <label class="field">最高等级
+          <input id="level-max" type="number" inputmode="numeric" placeholder="不限">
+        </label>
+        <label class="check-field" for="described">
+          <input id="described" type="checkbox">
+          <span>仅看有说明</span>
+        </label>
+      </div>
+      <p class="error" id="filter-error" role="alert" hidden>最低等级不能高于最高等级。</p>
+    </section>
+
+    <section class="results" id="results" aria-labelledby="results-title">
+      <h2 class="visually-hidden" id="results-title">查询结果</h2>
+      <div class="result-bar">
+        <div class="result-summary">
+          <p id="count" role="status" aria-live="polite">正在整理目录……</p>
+          <p id="range"></p>
+          <p class="scroll-hint">表格可左右滑动查看分类、等级和 GM 命令。</p>
+        </div>
+        <label class="page-size-field" for="page-size">每页
+          <select id="page-size" aria-label="每页显示条数">
+            <option value="20">20</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+          条
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" data-sort="id" aria-sort="none"><button class="sort-button" type="button">ID<span class="sort-indicator" aria-hidden="true">⇅</span></button></th>
+              <th scope="col" data-sort="zh" aria-sort="none"><button class="sort-button" type="button">中文名称<span class="sort-indicator" aria-hidden="true">⇅</span></button></th>
+              <th scope="col" data-sort="en" aria-sort="none"><button class="sort-button" type="button">服务端名称 / 中文说明<span class="sort-indicator" aria-hidden="true">⇅</span></button></th>
+              <th scope="col" data-sort="kind" aria-sort="none"><button class="sort-button" type="button">分类 / 品质<span class="sort-indicator" aria-hidden="true">⇅</span></button></th>
+              <th scope="col" data-sort="level" aria-sort="none"><button class="sort-button" type="button">等级<span class="sort-indicator" aria-hidden="true">⇅</span></button></th>
+              <th scope="col">GM 命令</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <nav class="pager" aria-label="分页">
+        <div class="pager-buttons">
+          <button id="first" class="secondary" type="button">« 首页</button>
+          <button id="previous" class="secondary" type="button">上一页</button>
+          <button id="next" class="secondary" type="button">下一页</button>
+          <button id="last" class="secondary" type="button">末页 »</button>
+        </div>
+        <span class="page-status" id="page"></span>
+        <form class="jump-form" id="jump-form">
+          <label for="jump">跳至</label>
+          <input id="jump" type="number" min="1" inputmode="numeric" aria-label="跳转页码">
+          <span>页</span>
+          <button class="secondary" type="submit">前往</button>
+        </form>
+      </nav>
+      <p class="footnote">等级字段优先采用“等级限制”，缺失时采用物品等级；排序时空值始终放在最后，少量原始负等级（常见于测试或特殊道具）仍按数值参与排序。设置最低/最高等级会排除没有等级字段的记录。每页可选 20、50、100 或 200 条。ID 重复时按服务端查询顺序选取首条。原始图标版目录见项目根目录 <code>items.html</code>。</p>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="item-data" type="application/json">__ITEM_DATA__</script>
+<script>
+(() => {
+  'use strict';
+
+  const items = JSON.parse(document.getElementById('item-data').textContent);
+  if (!Array.isArray(items)) return;
+
+  const fmt = new Intl.NumberFormat('zh-CN');
+  const collator = new Intl.Collator('zh-CN', {numeric: true, sensitivity: 'base'});
+  const qualityRank = new Map([
+    ['白', 1], ['綠', 2], ['绿', 2], ['藍', 3], ['蓝', 3], ['紫', 4],
+    ['黃', 5], ['黄', 5], ['金', 6], ['橙', 7], ['紅', 8], ['红', 8],
+  ]);
+  const qualityClass = new Map([
+    ['白', 'q-white'], ['綠', 'q-green'], ['绿', 'q-green'],
+    ['藍', 'q-blue'], ['蓝', 'q-blue'], ['紫', 'q-purple'],
+    ['黃', 'q-yellow'], ['黄', 'q-yellow'], ['金', 'q-gold'],
+    ['橙', 'q-orange'], ['紅', 'q-red'], ['红', 'q-red'],
+  ]);
+
+  const query = document.getElementById('query');
+  const category = document.getElementById('category');
+  const quality = document.getElementById('quality');
+  const coverage = document.getElementById('coverage');
+  const sortSelect = document.getElementById('sort');
+  const levelMin = document.getElementById('level-min');
+  const levelMax = document.getElementById('level-max');
+  const described = document.getElementById('described');
+  const filterError = document.getElementById('filter-error');
+  const rows = document.getElementById('rows');
+  const count = document.getElementById('count');
+  const range = document.getElementById('range');
+  const pageStatus = document.getElementById('page');
+  const pageSize = document.getElementById('page-size');
+  const firstButton = document.getElementById('first');
+  const previousButton = document.getElementById('previous');
+  const nextButton = document.getElementById('next');
+  const lastButton = document.getElementById('last');
+  const jumpForm = document.getElementById('jump-form');
+  const jump = document.getElementById('jump');
+  const toast = document.getElementById('toast');
+  const results = document.getElementById('results');
+
+  const state = {
+    sortKey: 'id',
+    sortDir: 1,
+    page: 0,
+    pageSize: Number(pageSize.value) || 50,
+  };
+  let filtered = [];
+  let searchTimer;
+  let toastTimer;
+
+  function parseLevel(value) {
+    const text = String(value ?? '').trim();
+    if (!text) return null;
+    const number = Number(text);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function rankOf(value) {
+    if (!value) return null;
+    return qualityRank.get(value) ?? 50;
+  }
+
+  const kindCounts = new Map();
+  const qualityCounts = new Map();
+  let namedCount = 0;
+  let describedCount = 0;
+  let leveledCount = 0;
+
+  for (const item of items) {
+    if (!item.kind) item.kind = '未分类';
+    item._level = parseLevel(item.level);
+    item._search = `${item.id} ${item.zh} ${item.en} ${item.kind} ${item.quality}`.toLowerCase();
+    if (item.zh) namedCount += 1;
+    if (item.description) describedCount += 1;
+    if (item._level !== null) leveledCount += 1;
+    kindCounts.set(item.kind, (kindCounts.get(item.kind) || 0) + 1);
+    if (item.quality) qualityCounts.set(item.quality, (qualityCounts.get(item.quality) || 0) + 1);
+  }
+
+  function addOption(select, value, text) {
+    select.append(new Option(text, value));
+  }
+
+  function populateSummary() {
+    const stats = [
+      [items.length, '条记录'],
+      [namedCount, '有中文名'],
+      [describedCount, '有说明'],
+      [leveledCount, '有等级字段'],
+      [kindCounts.size, '个分类'],
+    ];
+    const fragment = document.createDocumentFragment();
+    for (const [value, label] of stats) {
+      const stat = document.createElement('span');
+      stat.className = 'stat';
+      const number = document.createElement('strong');
+      number.textContent = fmt.format(value);
+      const caption = document.createElement('span');
+      caption.textContent = label;
+      stat.append(number, caption);
+      fragment.append(stat);
+    }
+    document.getElementById('summary').replaceChildren(fragment);
+  }
+
+  function populateCategories() {
+    const entries = [...kindCounts.entries()];
+    entries.sort((left, right) => right[1] - left[1] || collator.compare(left[0], right[0]));
+    const common = entries.slice(0, 12);
+    const others = entries.slice(12).sort((left, right) => collator.compare(left[0], right[0]));
+    const buildGroup = (label, list) => {
+      const group = document.createElement('optgroup');
+      group.label = label;
+      for (const [name, total] of list) {
+        group.append(new Option(`${name}（${fmt.format(total)}）`, name));
+      }
+      return group;
+    };
+    if (common.length) category.append(buildGroup('常用分类', common));
+    if (others.length) category.append(buildGroup('其他分类', others));
+  }
+
+  function populateQualities() {
+    const entries = [...qualityCounts.entries()];
+    entries.sort((left, right) => rankOf(left[0]) - rankOf(right[0]) || collator.compare(left[0], right[0]));
+    for (const [name, total] of entries) {
+      addOption(quality, name, `${name}（${fmt.format(total)}）`);
+    }
+    const missing = items.length - entries.reduce((total, entry) => total + entry[1], 0);
+    if (missing > 0) addOption(quality, '__none__', `无品质（${fmt.format(missing)}）`);
+  }
+
+  function cell(row, value) {
+    const element = document.createElement('td');
+    element.textContent = value;
+    row.append(element);
+    return element;
+  }
+
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  async function copyCommand(command, codeElement) {
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+        throw new Error('Clipboard API unavailable');
+      }
+      await navigator.clipboard.writeText(command);
+      showToast(`已复制 ${command}`);
+    } catch {
+      const selection = window.getSelection();
+      if (selection) {
+        const selectionRange = document.createRange();
+        selectionRange.selectNodeContents(codeElement);
+        selection.removeAllRanges();
+        selection.addRange(selectionRange);
+      }
+      showToast('无法访问剪贴板，命令已选中，请按 Ctrl+C');
+    }
+  }
+
+  function buildRow(item) {
+    const row = document.createElement('tr');
+
+    const idCell = cell(row, '');
+    const idCode = document.createElement('code');
+    idCode.className = 'id-code';
+    idCode.textContent = item.id;
+    idCell.append(idCode);
+
+    const nameCell = cell(row, item.zh || '无中文映射');
+    nameCell.className = item.zh ? 'item-name' : 'missing';
+
+    const serverCell = cell(row, '');
+    const serverName = document.createElement('span');
+    serverName.className = 'server-name';
+    serverName.textContent = item.en || '未命名记录';
+    serverCell.append(serverName);
+    if (item.description) {
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      summary.textContent = `说明 · ${item.table}`;
+      const description = document.createElement('p');
+      description.textContent = item.description;
+      details.append(summary, description);
+      serverCell.append(details);
+    }
+
+    const categoryCell = cell(row, '');
+    const kindBadge = document.createElement('span');
+    kindBadge.className = 'badge kind';
+    kindBadge.textContent = item.kind;
+    categoryCell.append(kindBadge);
+    if (item.quality) {
+      const qualityBadge = document.createElement('span');
+      qualityBadge.className = `badge ${qualityClass.get(item.quality) || 'q-other'}`;
+      qualityBadge.textContent = item.quality;
+      categoryCell.append(qualityBadge);
+    }
+
+    const levelCell = cell(row, item._level === null ? '—' : `Lv ${item.level}`);
+    levelCell.className = item._level === null ? 'level-cell none' : 'level-cell';
+
+    const commandCell = cell(row, '');
+    const command = document.createElement('div');
+    command.className = 'command';
+    const commandText = document.createElement('code');
+    commandText.textContent = `/item ${item.id} 1`;
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'copy';
+    copyButton.textContent = '复制';
+    copyButton.setAttribute('aria-label', `复制命令 ${commandText.textContent}`);
+    copyButton.addEventListener('click', () => copyCommand(commandText.textContent, commandText));
+    command.append(commandText, copyButton);
+    commandCell.append(command);
+
+    return row;
+  }
+
+  function buildEmptyRow() {
+    const row = document.createElement('tr');
+    const emptyCell = cell(row, '');
+    emptyCell.className = 'empty';
+    emptyCell.colSpan = 6;
+    const title = document.createElement('strong');
+    title.textContent = '没有匹配的道具';
+    const hint = document.createElement('p');
+    hint.textContent = '请调整关键词、分类、品质或等级区间。';
+    const resetButton = document.createElement('button');
+    resetButton.type = 'button';
+    resetButton.className = 'secondary';
+    resetButton.textContent = '清除筛选';
+    resetButton.addEventListener('click', resetFilters);
+    emptyCell.append(title, hint, resetButton);
+    return row;
+  }
+
+  function pageCount() {
+    return Math.max(1, Math.ceil(filtered.length / state.pageSize));
+  }
+
+  function render(scrollToTop = false) {
+    const pages = pageCount();
+    if (state.page >= pages) state.page = pages - 1;
+    if (state.page < 0) state.page = 0;
+
+    const startIndex = state.page * state.pageSize;
+    const pageItems = filtered.slice(startIndex, startIndex + state.pageSize);
+    const fragment = document.createDocumentFragment();
+    for (const item of pageItems) fragment.append(buildRow(item));
+    if (!pageItems.length) fragment.append(buildEmptyRow());
+    rows.replaceChildren(fragment);
+
+    const hasResults = filtered.length > 0;
+    const start = hasResults ? startIndex + 1 : 0;
+    const end = hasResults ? Math.min(filtered.length, startIndex + state.pageSize) : 0;
+    count.textContent = filtered.length === items.length
+      ? `共 ${fmt.format(items.length)} 条`
+      : `匹配 ${fmt.format(filtered.length)} 条 / 共 ${fmt.format(items.length)} 条`;
+    range.textContent = hasResults ? `本页第 ${fmt.format(start)}–${fmt.format(end)} 条` : '没有可显示的结果';
+    pageStatus.textContent = hasResults ? `第 ${fmt.format(state.page + 1)} / ${fmt.format(pages)} 页` : '第 0 / 0 页';
+
+    firstButton.disabled = !hasResults || state.page === 0;
+    previousButton.disabled = !hasResults || state.page === 0;
+    nextButton.disabled = !hasResults || state.page + 1 >= pages;
+    lastButton.disabled = !hasResults || state.page + 1 >= pages;
+    jump.disabled = !hasResults;
+    jump.max = String(pages);
+    jump.value = hasResults ? String(state.page + 1) : '';
+
+    if (scrollToTop) results.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
+  function compareNullable(leftValue, rightValue, direction, compare) {
+    const leftMissing = leftValue === null || leftValue === '';
+    const rightMissing = rightValue === null || rightValue === '';
+    if (leftMissing && rightMissing) return 0;
+    if (leftMissing) return 1;
+    if (rightMissing) return -1;
+    return compare(leftValue, rightValue) * direction;
+  }
+
+  function sortFiltered() {
+    const direction = state.sortDir;
+    filtered.sort((left, right) => {
+      let comparison = 0;
+      switch (state.sortKey) {
+        case 'level':
+          comparison = compareNullable(left._level, right._level, direction, (a, b) => a - b);
+          break;
+        case 'quality':
+          comparison = compareNullable(rankOf(left.quality), rankOf(right.quality), direction, (a, b) => a - b);
+          if (!comparison && left.quality && right.quality) {
+            comparison = collator.compare(left.quality, right.quality) * direction;
+          }
+          break;
+        case 'zh':
+          comparison = compareNullable(left.zh, right.zh, direction, (a, b) => collator.compare(a, b));
+          break;
+        case 'en':
+          comparison = compareNullable(left.en, right.en, direction, (a, b) => collator.compare(a, b));
+          break;
+        case 'kind':
+          comparison = compareNullable(left.kind, right.kind, direction, (a, b) => collator.compare(a, b));
+          if (!comparison) {
+            comparison = compareNullable(rankOf(left.quality), rankOf(right.quality), direction, (a, b) => a - b);
+          }
+          break;
+        default:
+          comparison = (left.id - right.id) * direction;
+      }
+      return comparison || left.id - right.id;
+    });
+  }
+
+  function syncSortUi() {
+    sortSelect.value = `${state.sortKey}-${state.sortDir === 1 ? 'asc' : 'desc'}`;
+    for (const header of document.querySelectorAll('th[data-sort]')) {
+      const active = header.dataset.sort === state.sortKey;
+      header.setAttribute('aria-sort', active ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none');
+      const indicator = header.querySelector('.sort-indicator');
+      if (indicator) indicator.textContent = active ? (state.sortDir === 1 ? '↑' : '↓') : '⇅';
+    }
+  }
+
+  function readNumber(input) {
+    const text = input.value.trim();
+    if (!text) return null;
+    const value = Number(text);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function filterAndRender() {
+    const words = query.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const selectedKind = category.value;
+    const selectedQuality = quality.value;
+    const selectedCoverage = coverage.value;
+    const minimum = readNumber(levelMin);
+    const maximum = readNumber(levelMax);
+    const invalidRange = minimum !== null && maximum !== null && minimum > maximum;
+
+    filterError.hidden = !invalidRange;
+    for (const input of [levelMin, levelMax]) {
+      if (invalidRange) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    }
+
+    state.page = 0;
+    if (invalidRange) {
+      filtered = [];
+    } else {
+      filtered = items.filter(item => {
+        if (selectedKind && item.kind !== selectedKind) return false;
+        if (selectedQuality === '__none__') {
+          if (item.quality) return false;
+        } else if (selectedQuality && item.quality !== selectedQuality) {
+          return false;
+        }
+        if (selectedCoverage === 'yes' && !item.zh) return false;
+        if (selectedCoverage === 'no' && item.zh) return false;
+        if (minimum !== null && (item._level === null || item._level < minimum)) return false;
+        if (maximum !== null && (item._level === null || item._level > maximum)) return false;
+        if (described.checked && !item.description) return false;
+        for (const word of words) {
+          if (!item._search.includes(word)) return false;
+        }
+        return true;
+      });
+    }
+    sortFiltered();
+    render();
+  }
+
+  function goToPage(index) {
+    if (!filtered.length) return;
+    const target = Math.min(Math.max(index, 0), pageCount() - 1);
+    if (target === state.page) {
+      jump.value = String(state.page + 1);
+      return;
+    }
+    state.page = target;
+    render(true);
+  }
+
+  function resetFilters() {
+    query.value = '';
+    category.value = '';
+    quality.value = '';
+    coverage.value = '';
+    levelMin.value = '';
+    levelMax.value = '';
+    described.checked = false;
+    state.sortKey = 'id';
+    state.sortDir = 1;
+    state.page = 0;
+    filterError.hidden = true;
+    levelMin.removeAttribute('aria-invalid');
+    levelMax.removeAttribute('aria-invalid');
+    syncSortUi();
+    filterAndRender();
+    query.focus();
+  }
+
+  function scheduleFilter() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(filterAndRender, 160);
+  }
+
+  populateSummary();
+  populateCategories();
+  populateQualities();
+  syncSortUi();
+
+  query.addEventListener('input', scheduleFilter);
+  for (const element of [category, quality, coverage, described]) {
+    element.addEventListener('change', filterAndRender);
+  }
+  for (const element of [levelMin, levelMax]) {
+    element.addEventListener('input', scheduleFilter);
+    element.addEventListener('change', filterAndRender);
+  }
+  sortSelect.addEventListener('change', () => {
+    const [key, direction] = sortSelect.value.split('-');
+    state.sortKey = key;
+    state.sortDir = direction === 'desc' ? -1 : 1;
+    state.page = 0;
+    sortFiltered();
+    syncSortUi();
+    render();
+  });
+  for (const header of document.querySelectorAll('th[data-sort]')) {
+    header.querySelector('.sort-button').addEventListener('click', () => {
+      const key = header.dataset.sort;
+      if (state.sortKey === key) state.sortDir *= -1;
+      else {
+        state.sortKey = key;
+        state.sortDir = 1;
+      }
+      state.page = 0;
+      sortFiltered();
+      syncSortUi();
+      render();
+    });
+  }
+  pageSize.addEventListener('change', () => {
+    state.pageSize = Number(pageSize.value) || 50;
+    state.page = 0;
+    render();
+  });
+  firstButton.addEventListener('click', () => goToPage(0));
+  previousButton.addEventListener('click', () => goToPage(state.page - 1));
+  nextButton.addEventListener('click', () => goToPage(state.page + 1));
+  lastButton.addEventListener('click', () => goToPage(pageCount() - 1));
+  jumpForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!filtered.length) return;
+    const value = Number(jump.value);
+    if (!Number.isFinite(value)) return;
+    goToPage(Math.trunc(value) - 1);
+  });
+  document.getElementById('reset').addEventListener('click', resetFilters);
+  document.addEventListener('keydown', event => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+    const active = document.activeElement;
+    const tag = active ? active.tagName : '';
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || (active && active.isContentEditable)) return;
+    event.preventDefault();
+    query.focus();
+  });
+
+  filterAndRender();
+})();
+</script>
+</body>
+</html>

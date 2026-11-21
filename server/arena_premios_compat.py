@@ -3,7 +3,7 @@ import time
 
 POLICY='arena_lv280_para401_v1'
 DURATION=9240*60
-WEAPONS={9:66298,10:66299,11:66300,17:66301,8:66302,32:66303}
+WEAPONS={9:66298,10:66299,11:66300,17:66301,8:66302,30:66303}
 ARMOR={32:(66305,66306,66307,66308),33:(66309,66310,66311,66312),
        34:(66313,66314,66315,66316)}
 
@@ -31,7 +31,7 @@ def plan(r,cid,member,data,config):
     # Prefer the learned armor branch, independent of the weapon class.
     candidates=[sid for sid in ARMOR if sid in skills]
     armor=max(candidates,key=lambda sid:(skills[sid],-sid)) if candidates else (
-        32 if weapon in (17,32) else 34 if weapon==8 else 33)
+        32 if weapon in (17,30) else 34 if weapon==8 else 33)
     items=list(ARMOR[armor])+[66319,66320]
     if place<=2:items.append(66318 if weapon==8 else 66317)
     if place<=3:items.append(66329+place)

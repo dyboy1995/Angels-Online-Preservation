@@ -5,6 +5,13 @@ from test_competiciones import world,stored
 import app,eventos,travel_items as travel
 
 
+def test_chinese_mark_rows_fall_back_to_big5_without_changing_default_tables():
+    from house_services import xml_rows
+    assert travel.item(3693)['使用公式'] == '8'
+    assert travel.item(3694)['使用公式'] == '9'
+    assert 3693 not in xml_rows('item.xml')
+
+
 def use(s,slot,target=None):
     body=struct.pack('<I',slot) if target is None else struct.pack('<II',slot,target)
     app.Servidor.__new__(app.Servidor).manejar(s,0x2e,None,None,'test',body)

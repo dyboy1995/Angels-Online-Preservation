@@ -22,9 +22,9 @@ STRAW_DROP_PROBABILIDAD = 0.50  # provisional; usuario recuerda caida alta
 # =====================================================================
 # 1.0 = Experiencia normal oficial
 # 2.0 = Doble experiencia, etc.
-TASA_EXP_BASE = 2000.0           # Multiplicador de EXP de personaje
-TASA_SKILL_EXP_BASE = 1000.0     # Multiplicador de EXP de habilidades (stamina/skills)
-TASA_DROP_BASE = 0.001          # Multiplicador de probabilidad de drop de items
+TASA_EXP_BASE = 1.0           # Multiplicador de EXP de personaje
+TASA_SKILL_EXP_BASE = 100.0     # Multiplicador de EXP de habilidades (stamina/skills)
+TASA_DROP_BASE = 10.0          # Multiplicador de probabilidad de drop de items
 TASA_ORO_BASE = 7.5           # Multiplicador de oro obtenido de monstruos
 
 # =====================================================================
@@ -40,7 +40,7 @@ DURACION_BAILE_SEGUNDOS = 60           # Duracion del baile una vez iniciado (po
 # CONFIGURACION DE EVENTOS DE FIN DE SEMANA / SEMANALES
 # =====================================================================
 # Si es True, activa automaticamente el bono de fin de semana (Viernes, Sabado y Domingo)
-EVENTO_FIN_DE_SEMANA_AUTOMATICO = True
+EVENTO_FIN_DE_SEMANA_AUTOMATICO = False
 
 # Si prefieres forzar el evento encendido o apagado manualmente:
 # Pon True para forzar evento activo siempre, o False para desactivarlo.

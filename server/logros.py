@@ -59,6 +59,20 @@ def de_id(lid: int):
     return None
 
 
+def nombre_logro(lid):
+    import localizacion
+    entry = de_id(lid) or {}
+    return localizacion.nombre('achievement', lid, entry.get('nombre') or lid)
+
+
+def aviso_titulo(nombre, titulo):
+    import localizacion
+    if localizacion.activa():
+        translated = localizacion.nombre('crown', titulo, None)
+        return '%s获得了称号【%s】！' % (nombre, translated or nombre_titulo(titulo))
+    return '%s has obtained the title [%s]!' % (nombre, nombre_titulo(titulo))
+
+
 _PUNTOS_TITULO = None
 
 

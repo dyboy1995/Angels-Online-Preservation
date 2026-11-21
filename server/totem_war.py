@@ -809,7 +809,8 @@ def cartel_deslizante(texto, nombre='') -> bytes:
     Antes el texto iba en +46 (con un largo en +5): el cliente leia en +22
     una cadena vacia y no salia nada, ni al empezar la Totem War ni al acabar.
     """
-    t = str(texto).encode('latin-1', 'replace')[:900]
+    import localizacion
+    t = localizacion.codificar(localizacion.traducir(texto), limite=900, legacy='latin-1')
     n = str(nombre or '').encode('latin-1', 'replace')[:16].ljust(17, b'\x00')
     return struct.pack('<HIB17s', 0x0128, 0, 0, n) + t + b'\x00'
 

@@ -9,7 +9,8 @@ class Rechazo(ValueError):pass
 @functools.lru_cache(maxsize=None)
 def item(ident):
     from house_services import xml_rows
-    return next((r for n in range(1,10) if (r:=xml_rows('item%s.xml'%(n if n>1 else '')).get(ident))),{})
+    return next((r for n in range(1,10)
+                 if (r:=xml_rows('item%s.xml'%(n if n>1 else ''), include_big5=True).get(ident))),{})
 
 
 def _notice(s,text):
@@ -57,7 +58,7 @@ def usar(s,slot,target=None):
     import app,recent_mall,eventos
     from house_services import xml_rows
     ident=s.inventario.get(slot);row=item(ident);formula=int(row.get('\u4f7f\u7528\u516c\u5f0f') or 0)
-    magic=xml_rows('magic.xml').get(int(row.get('\u5e38\u99d0\u6cd5\u8853') or 0),{})
+    magic=xml_rows('magic.xml', include_big5=True).get(int(row.get('\u5e38\u99d0\u6cd5\u8853') or 0),{})
     city=int(magic.get('\u516c\u5f0f') or 0)==16
     maple=row.get('\u7269\u54c1\u985e\u5225')=='\u9b6f\u6613\u6d6e\u6a19'
     if not city and not maple and formula not in (2,7,8,9) and ident!=20566:return False
